@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum ContractType {
+  FULL_TIME
+  PART_TIME
+  INTERN
+  TEMPORARY
+}
+
+model Employee {
+  Employee_id      Int                @id @default(autoincrement())
+  first_name       String
+  last_name        String
+  national_id      Int                @unique
+  cnas_number      Int                @unique
+  birth_date       DateTime
+  hire_date        DateTime
+  contract_Type    ContractType
+  position         String
+  department       String
+  work_location    String
+  bank_account     Int                @unique
+  email            String             @unique
+  phone            Int                @unique
+  username         String             @unique
+  password         String
+  Payroll          Payroll[]
+  Leave            Leave[]
+  CNASContribution CNASContribution[]
+}
+
+enum SalaryType {
+  EARNING
+  DEDUCTION
+}
+
+enum SalaryAmountType {
+  FIXED
+  PERCENTAGE
+}
+
+model SalaryComponent {
+  component_id Int              @id @default(autoincrement())
+  name         String
+  type         SalaryType
+  amount_type  SalaryAmountType
+  value        Float
+  is_taxable   Boolean
+  is_cnassable Boolean
+  PayrollLine  PayrollLine[]
+}
+
+enum StatusType {
+  DRAFT
+  FINALIZED
+  PAID
+}
+
+model Payroll {
+  payroll_id       Int           @id @default(autoincrement())
+  employee_id      Int
+  employee         Employee      @relation(fields: [employee_id], references: [Employee_id])
+  pay_period       DateTime
+  gross_salary     Float
+  total_deductions Float
+  net_salary       Float
+  status           StatusType
+  created_at       DateTime
+  updated_at       DateTime
+  PayrollLine      PayrollLine[]
+}
+
+model PayrollLine {
+  payroll_line_id Int             @id @default(autoincrement())
+  payroll_id      Int
+  payroll         Payroll         @relation(fields: [payroll_id], references: [payroll_id])
+  component_id    Int
+  salarycomponent SalaryComponent @relation(fields: [component_id], references: [component_id])
+  amount          Float
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  MATERNITY
+}
+
+model Leave {
+  leave_id      Int       @id @default(autoincrement())
+  employee_id   Int
+  employee      Employee  @relation(fields: [employee_id], references: [Employee_id])
+  leave_type    LeaveType
+  start_date    DateTime
+  end_date      DateTime
+  approved_by   String
+  impact_on_pay Boolean
+}
+
+model TaxBracket {
+  bracket_id Int   @id @default(autoincrement())
+  min_salary Float
+  max_salary Float
+  rate       Float
+  deduction  Float
+}
+
+model CNASContribution {
+  cnas_id               Int      @id @default(autoincrement())
+  employee_id           Int
+  employee              Employee @relation(fields: [employee_id], references: [Employee_id])
+  month                 DateTime
+  employee_contribution Float
+  employer_contribution Float
+  submitted             Boolean
+}
